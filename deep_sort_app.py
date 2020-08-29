@@ -71,7 +71,7 @@ def gather_sequence_info(sequence_dir, detection_file):
     info_filename = os.path.join(sequence_dir, "seqinfo.ini")
     if os.path.exists(info_filename):
         with open(info_filename, "r") as f:
-            line_splits = [l.split('=') for l in f.read().splitlines()[1:]]
+            line_splits = [l.split(' = ') for l in f.read().splitlines()[1:]]
             info_dict = dict(
                 s for s in line_splits if isinstance(s, list) and len(s) == 2)
         update_ms = 1000 / int(info_dict["framerate"])
