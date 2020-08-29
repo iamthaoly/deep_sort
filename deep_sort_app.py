@@ -48,7 +48,8 @@ def gather_sequence_info(sequence_dir, detection_file):
 
     detections = None
     if detection_file is not None:
-        detections = np.load(detection_file)
+        # detections = np.load(detection_file)
+        detections = np.loadtxt(detection_file, delimiter=",")
     groundtruth = None
     if os.path.exists(groundtruth_file):
         groundtruth = np.loadtxt(groundtruth_file, delimiter=',')
@@ -73,8 +74,7 @@ def gather_sequence_info(sequence_dir, detection_file):
             line_splits = [l.split('=') for l in f.read().splitlines()[1:]]
             info_dict = dict(
                 s for s in line_splits if isinstance(s, list) and len(s) == 2)
-
-        update_ms = 1000 / int(info_dict["frameRate"])
+        update_ms = 1000 / int(info_dict["framerate"])
     else:
         update_ms = None
 
@@ -164,7 +164,7 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     results = []
 
     def frame_callback(vis, frame_idx):
-        print("Processing frame %05d" % frame_idx)
+        print("Processing frame %06d" % frame_idx)
 
         # Load image and generate detections.
         detections = create_detections(
@@ -196,7 +196,7 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
                 continue
             bbox = track.to_tlwh()
             results.append([
-                frame_idx, track.track_id, bbox[0], bbox[1], bbox[2], bbox[3]])
+                frame_idx, track.track_id, bbox[0], bbox[1], bbox[2], bbox[3]], track.get_class())
 
     # Run tracker.
     if display:
@@ -208,8 +208,8 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     # Store results.
     f = open(output_file, 'w')
     for row in results:
-        print('%d,%d,%.2f,%.2f,%.2f,%.2f,1,-1,-1,-1' % (
-            row[0], row[1], row[2], row[3], row[4], row[5]),file=f)
+        print('%d,%d,%.2f,%.2f,%.2f,%.2f,1,%d,-1,-1' % (
+            row[0], row[1], row[2], row[3], row[4], row[5], row[6]),file=f)
 
 
 def bool_string(input_string):
