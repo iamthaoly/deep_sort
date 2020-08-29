@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import argparse
 import os
-
+import math
 import cv2
 import numpy as np
 
@@ -119,7 +119,7 @@ def create_detections(detection_mat, frame_idx, min_height=0):
     # print(detection_mat)
     detection_list = []
     for row in detection_mat[mask]:
-        class_name = row[1]
+        class_name = row[8]
         bbox, confidence, feature = row[2:6], row[6], row[10:]
         if bbox[3] < min_height:
             continue
@@ -209,8 +209,27 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     # Store results.
     f = open(output_file, 'w')
     for row in results:
-        print('%d,%d,%f,%f,%f,%f,1,%d,-1,-1' % (
-            row[0], row[1], row[2], row[3], row[4], row[5], row[6]),file=f)
+        frame_id = row[0]
+        track_id = row[1]
+        xmin, ymin, width, height = row[2:6]
+        xmax = xmin + width
+        ymax = ymin + height
+        x_center = (xmin + xmax)/2
+        y_center = (ymin + ymax)/2
+        diagonal = math.hypot(xmax - xmin, ymax - ymin)
+        # class by frcnn mismatch by +1 so -1
+        class_name = row[6]-1 
+        print("%d,%d,%f,%f,%f,-1,%d" % (frame_id, track_id, x_center, y_center, diagonal, class_name),file=f)
+    # Sort
+    text_path = output_file
+    raw_data = np.genfromtxt(text_path, dtype=np.float64, delimiter=",", names=["frame_id", "track_id", "x", "y", "d", "confi", "class"])
+    raw_data.sort(order=["track_id", "frame_id"])
+    new_data = ""
+    for row in raw_data:
+        new_data += "{},{},{},{},{},{},{}\n".format(int(row[0]), int(row[1]), row[2], row[3], row[4], row[5], int(row[6]))
+    with open(text_path, "w+") as f:
+        f.write(new_data)
+    print("FORMATTING DONE!")
 
 
 def bool_string(input_string):
